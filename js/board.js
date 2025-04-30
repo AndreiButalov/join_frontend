@@ -17,8 +17,6 @@ let selectedNames = [];
  * error handling.
  */
 async function saveTasksToServer(task) {
-    console.log(todos);
-    
     try {
         const response = await fetch(`${BASE_URL}tasks/`, {
             method: 'POST',
@@ -88,6 +86,26 @@ async function deleteTaskFromLocalStorage(id) {
 }
 
 
+async function updateTaskOnServer(id, updatedFields) {
+    try {
+        const response = await fetch(`${BASE_URL}tasks/${id}/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updatedFields)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Update failed with status ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Failed to update task on server:', error);
+    }
+    initBoardTasks();
+}
+
+
 /**
  * The function `initBoardTasks` loads tasks from the server and categorizes them into different
  * sections on a board based on their status.
@@ -134,7 +152,7 @@ async function generateToDo(arr, categorie_id, category) {
             const element = arr[i];
             categorie_id.innerHTML += renderHtmlToDo(element);
             let idSUb = document.getElementById(`idSUb${element.id}`);
-
+            
             if (element.subtasks) {
                 idSUb.innerHTML = '';
                 idSUb.innerHTML = renderHtmlProgressBarEmpty(element)
@@ -162,8 +180,6 @@ function addTask(column) {
     generateAddTasks(column);
     displayGreyBackground();
     slideInTask();
-    // initAddTask();
-    // initBoardTasks();
 }
 
 
@@ -176,7 +192,8 @@ function addTask(column) {
  */
 async function generateShowTask(id) {
     let boardPopUp = document.getElementById('boardPopUp');
-    let contact = todos.find(obj => obj['id'] == id);
+    let contact = todos.find(obj => obj['id'] == id);   
+    
     boardPopUp.innerHTML = renderGenerateShowTaskHtml(contact, id);
 
     generateCheckBoxSubTask(contact, id)
@@ -211,7 +228,6 @@ async function updateSubtaskStatus(contact, subtask, isChecked) {
         } else {
             contact.selectedTask = contact.selectedTask.filter(task => task !== subtask);
         }
-        // saveTaskToLocalStorage();
         await saveTasksToServer();
         initBoardTasks();
     }
@@ -269,7 +285,7 @@ function editTask(id) {
     let showTaskContainer = document.getElementById('showTaskContainer');
 
     showTaskContainer.style.display = 'none';
-    boardPopUp.innerHTML += renderEditTaskHtml(contact);/** */
+    boardPopUp.innerHTML += renderEditTaskHtml(contact);
 
     getcheckBoxesEdit(id);
     getContactPriorityEdit(contact);
@@ -362,7 +378,7 @@ function getSubtaskEdit(contact) {
 
     if (contact.subtasks) {
         for (let i = 0; i < contact.subtasks.length; i++) {
-            const element = contact.subtasks[i];
+            const element = contact.subtasks[i];            
             task_subtasks_edit.innerHTML += rendergetSubtaskEditHtml(element, contact, i);
         }
     } else {
@@ -415,7 +431,8 @@ async function addEditSubtask(i, id) {
     let contact = todos.find(obj => obj['id'] == id);
     let show_task_subtask_edit_input = document.getElementById(`show_task_subtask_edit_input${i}`);
     contact.subtasks[i] = show_task_subtask_edit_input.value;
-    // saveTaskToLocalStorage();
+    console.log(contact.subtasks[i]);
+    
     await saveTasksToServer();
     getSubtaskEdit(contact);
     initBoardTasks();
@@ -434,7 +451,6 @@ async function addEditSubtask(i, id) {
 async function showTaskDeleteSubtask(i, id) {
     let contact = todos.find(obj => obj['id'] == id);
     contact.subtasks.splice(i, 1);
-    // saveTaskToLocalStorage();
     await saveTasksToServer();
     getSubtaskEdit(contact);
     initBoardTasks();
@@ -458,7 +474,6 @@ async function addNewSubTaskEdit(id) {
         contact.subtasks.push(task_subtasks_edit);
     }
     task_subtasks.value = '';
-    // saveTaskToLocalStorage();
     await saveTasksToServer();
     getSubtaskEdit(contact);
     initBoardTasks();
@@ -544,7 +559,6 @@ function updateTaskCategory(contact) {
  * asynchronously.
  */
 async function saveTaskUpdates() {
-    // saveTaskToLocalStorage();
     await saveTasksToServer();
 }
 

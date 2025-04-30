@@ -89,21 +89,20 @@ async function addTaskToTasks(column) {
         'priority': getUserPriorityStatus(userPriotity),
         'status': document.getElementById('task_category').value,
         'title': document.getElementById('task_title').value,
-        // 'subtasks': subtasks,
-        // 'selectedTask': [],
+        'subtasks': JSON.stringify(subtasks),
+        'selectedTask': JSON.stringify([]),
     };
 
     todos.push(task);
     console.log(todos);
     
     await saveTasksToServer(task);
-    // // saveTaskToLocalStorage();
-    // if (window.location.href.includes('board.html')) {
-    //     closeWindow();
-    //     initBoardTasks();
-    // }
-    // initAddTask();
-    // slideInConfirmation();
+    if (window.location.href.includes('board.html')) {
+        closeWindow();
+        initBoardTasks();
+    }
+    initAddTask();
+    slideInConfirmation();
 }
 
 

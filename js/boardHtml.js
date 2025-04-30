@@ -38,8 +38,8 @@ function renderHtmlToDo(element) {
  * total subtasks.
  */
 function renderHtmlProgressBar(element) {
-    let currentAllSubtask = element.subtasks.length;
-    let currentSelectedSubtask = element.selectedTask.length;
+    let currentAllSubtask = JSON.parse(element.subtasks).length;
+    let currentSelectedSubtask = JSON.parse(element.selectedTask).length;   
 
     let width = (currentSelectedSubtask / currentAllSubtask * 100).toFixed(0);
     return `

@@ -260,13 +260,16 @@ function allowDrop(ev) {
  */
 async function moveTo(category) {
     let contact = todos.find(obj => obj['id'] == currentElement);
+    if (!contact) return;
+
     contact['category'] = category;
-    await saveTasksToServer();
-    // saveTaskToLocalStorage();
+    
+
+    await updateTaskOnServer(contact.id, { category });
+
     removeHighlightTaskCategory('board_' + category);
     initBoardTasks();
 }
-
 
 /**
  * The function "highlight" adds a CSS class to highlight a specific element on the webpage.
@@ -337,12 +340,22 @@ function closeWindow() {
 function generateCheckBoxSubTask(contact, id) {
     let show_task_subtask = document.getElementById('show_task_subtask');
     show_task_subtask.innerHTML = '';
-    if (contact && contact.subtasks) {
-        for (let i = 0; i < contact.subtasks.length; i++) {
-            const element = contact.subtasks[i];
+
+    let subtasksArray = [];
+
+    try {
+        subtasksArray = JSON.parse(contact.subtasks || '[]');
+    } catch (e) {
+        console.error("Fehler beim Parsen von subtasks:", e);
+    }
+
+    if (subtasksArray.length > 0) {
+        for (let i = 0; i < subtasksArray.length; i++) {
+            const element = subtasksArray[i];
 
             show_task_subtask.innerHTML += rendergenerateCheckBoxSubTaskHtml(contact, element, id, i);
         }
+
         document.querySelectorAll(`#show_task_subtask input[type="checkbox"]`).forEach(checkbox => {
             checkbox.addEventListener('change', function () {
                 updateSubtaskStatus(contact, this.dataset.value, this.checked);
@@ -352,6 +365,7 @@ function generateCheckBoxSubTask(contact, id) {
         show_task_subtask.innerHTML = 'No subtasks here.';
     }
 }
+
 
 
 /**
