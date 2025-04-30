@@ -1,4 +1,4 @@
-const BASE_URL = "https://join-b0cbf-default-rtdb.europe-west1.firebasedatabase.app";
+const BASE_URL = "http://127.0.0.1:8000/api/";
 const usedIds = new Set();
 
 let showEdit = true;
@@ -11,25 +11,25 @@ let subtasks = [];
 let selectedSubtasks = [];
 let selectedNames = [];
 
-loadTaskFromLocalStorage();
 
 /**
  * The function `saveTasksToServer` asynchronously saves tasks to a server using a PUT request with
  * error handling.
  */
-async function saveTasksToServer() {
+async function saveTasksToServer(task) {
+    console.log(todos);
+    
     try {
-        const response = await fetch(`${BASE_URL}/tasks.json`, {
-            method: 'PUT',
+        const response = await fetch(`${BASE_URL}tasks/`, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(todos)
+            body: JSON.stringify(task)
         });
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
-        console.log('Tasks saved to server');
     } catch (error) {
         console.error('Failed to save tasks to server:', error);
     }
@@ -42,7 +42,7 @@ async function saveTasksToServer() {
  */
 async function loadTasksFromServer() {
     try {
-        const response = await fetch(`${BASE_URL}/tasks.json`);
+        const response = await fetch(`${BASE_URL}tasks`);
         if (!response.ok) {
             throw new Error('Netzwerkantwort war nicht ok.');
         }
@@ -51,7 +51,7 @@ async function loadTasksFromServer() {
             id,
             ...data[id]
         }));
-
+        
     } catch (error) {
         console.error('Fehler beim Abrufen der Daten:', error);
     }
@@ -66,37 +66,25 @@ async function loadTasksFromServer() {
  * find and remove the specific task from the `todos` array before saving the updated tasks to the
  * server and local storage.
  */
+
 async function deleteTaskFromLocalStorage(id) {
-    let arr = [];
-    for (let i = 0; i < todos.length; i++) {
-        arr = (todos.filter(todo => todo.id != id));
+
+    todos = todos.filter(todo => todo.id !== id);
+    try {
+        const response = await fetch(`${BASE_URL}tasks/${id}/`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to delete task from server');
+        }
+
+    } catch (error) {
+        console.error('Error deleting task from server:', error);
     }
-    todos = arr;
-    await saveTasksToServer();
-    saveTaskToLocalStorage();
+
     initBoardTasks();
     closeShowTask();
-}
-
-
-/**
- * The function `saveTaskToLocalStorage` converts a JavaScript array `todos` to a JSON string and saves
- * it to the browser's local storage under the key 'todosToServer'.
- */
-function saveTaskToLocalStorage() {
-    let todosAsText = JSON.stringify(todos);
-    localStorage.setItem('todosToServer', todosAsText)
-}
-
-
-/**
- * The function `loadTaskFromLocalStorage` retrieves and parses todos stored in the local storage.
- */
-function loadTaskFromLocalStorage() {
-    let todosAsText = localStorage.getItem('todosToServer');
-    if (todosAsText) {
-        todos = JSON.parse(todosAsText);
-    }
 }
 
 
@@ -107,6 +95,7 @@ function loadTaskFromLocalStorage() {
 async function initBoardTasks() {
     await loadTasksFromServer();
     await loadGuestFromServer();
+
 
     let task = document.getElementById('board_to_do');
     let progress = document.getElementById('board_in_progress');
@@ -173,7 +162,8 @@ function addTask(column) {
     generateAddTasks(column);
     displayGreyBackground();
     slideInTask();
-    initAddTask();
+    // initAddTask();
+    // initBoardTasks();
 }
 
 
@@ -221,7 +211,7 @@ async function updateSubtaskStatus(contact, subtask, isChecked) {
         } else {
             contact.selectedTask = contact.selectedTask.filter(task => task !== subtask);
         }
-        saveTaskToLocalStorage();
+        // saveTaskToLocalStorage();
         await saveTasksToServer();
         initBoardTasks();
     }
@@ -238,16 +228,30 @@ async function updateSubtaskStatus(contact, subtask, isChecked) {
 function getshowTaskUserName(contact) {
     let showTaskUserName = document.getElementById('show_task_user_name');
     showTaskUserName.innerHTML = "";
-    if (contact.name) {
-        for (let i = 0; i < contact['name'].length; i++) {
-            const element = contact['name'][i];
-            showTaskUserName.innerHTML += /*html*/`
-                <div class="show_task_assigned_to_users">                
-                    <div class="board_task_user_initial show_task_user_initial" style="background-color: ${contact.color[i]};">${contact.initial[i]}</div>
-                    <div>${element}</div>
-                </div>
-            `;
-        }
+    
+    let nameArray = [];
+    let colorArray = [];
+    let initialArray = [];
+
+    try {
+        nameArray = JSON.parse(contact.name || '[]');
+        colorArray = JSON.parse(contact.color || '[]');
+        initialArray = JSON.parse(contact.initial || '[]');
+    } catch (e) {
+        console.error("Fehler beim Parsen von contact-Daten:", e);
+    }
+    
+    for (let i = 0; i < nameArray.length; i++) {
+        const element = nameArray[i];
+        const color = colorArray[i] || '#ccc';
+        const initial = initialArray[i] || '';
+
+        showTaskUserName.innerHTML += /*html*/`
+            <div class="show_task_assigned_to_users">                
+                <div class="board_task_user_initial show_task_user_initial" style="background-color: ${color};">${initial}</div>
+                <div>${element}</div>
+            </div>
+        `;
     }
 }
 
@@ -411,7 +415,7 @@ async function addEditSubtask(i, id) {
     let contact = todos.find(obj => obj['id'] == id);
     let show_task_subtask_edit_input = document.getElementById(`show_task_subtask_edit_input${i}`);
     contact.subtasks[i] = show_task_subtask_edit_input.value;
-    saveTaskToLocalStorage();
+    // saveTaskToLocalStorage();
     await saveTasksToServer();
     getSubtaskEdit(contact);
     initBoardTasks();
@@ -430,7 +434,7 @@ async function addEditSubtask(i, id) {
 async function showTaskDeleteSubtask(i, id) {
     let contact = todos.find(obj => obj['id'] == id);
     contact.subtasks.splice(i, 1);
-    saveTaskToLocalStorage();
+    // saveTaskToLocalStorage();
     await saveTasksToServer();
     getSubtaskEdit(contact);
     initBoardTasks();
@@ -454,7 +458,7 @@ async function addNewSubTaskEdit(id) {
         contact.subtasks.push(task_subtasks_edit);
     }
     task_subtasks.value = '';
-    saveTaskToLocalStorage();
+    // saveTaskToLocalStorage();
     await saveTasksToServer();
     getSubtaskEdit(contact);
     initBoardTasks();
@@ -540,7 +544,7 @@ function updateTaskCategory(contact) {
  * asynchronously.
  */
 async function saveTaskUpdates() {
-    saveTaskToLocalStorage();
+    // saveTaskToLocalStorage();
     await saveTasksToServer();
 }
 

@@ -1,4 +1,4 @@
-const BASE_URL_GUEST = 'https://join-b0cbf-default-rtdb.europe-west1.firebasedatabase.app/';
+const BASE_URL_GUEST = 'http://127.0.0.1:8000/api/';
 let show = true;
 let guesteArray = [];
 let userPriotity;
@@ -12,7 +12,7 @@ let addTaskProcess = false;
  */
 async function loadGuestFromServer() {
     try {
-        const response = await fetch(`${BASE_URL_GUEST}/guestContacts.json`);
+        const response = await fetch(`${BASE_URL_GUEST}guestContacts`);
         if (!response.ok) {
             throw new Error('Netzwerkantwort war nicht ok.');
         }
@@ -81,28 +81,29 @@ async function addTaskToTasks(column) {
     let task = {
         'category': column,
         'date': document.getElementById('task_date').value,
-        'description': document.getElementById('task_description').value,
-        'id': generateUniqueId(),
-        'name': namelist,
-        'initial': initials,
-        'color': colorList,
+        'description': document.getElementById('task_description').value,        
+        'name': JSON.stringify(namelist),
+        'initial': JSON.stringify(initials),
+        'color': JSON.stringify(colorList),
         'priorityImg': getPriorityImage(userPriotity),
         'priority': getUserPriorityStatus(userPriotity),
         'status': document.getElementById('task_category').value,
         'title': document.getElementById('task_title').value,
-        'subtasks': subtasks,
-        'selectedTask': [],
+        // 'subtasks': subtasks,
+        // 'selectedTask': [],
     };
 
     todos.push(task);
-    await saveTasksToServer();
-    saveTaskToLocalStorage();
-    if (window.location.href.includes('board.html')) {
-        closeWindow();
-        initBoardTasks();
-    }
-    initAddTask();
-    slideInConfirmation();
+    console.log(todos);
+    
+    await saveTasksToServer(task);
+    // // saveTaskToLocalStorage();
+    // if (window.location.href.includes('board.html')) {
+    //     closeWindow();
+    //     initBoardTasks();
+    // }
+    // initAddTask();
+    // slideInConfirmation();
 }
 
 
@@ -163,21 +164,6 @@ function slideInConfirmation() {
         confirmation.style.animation = 'fadeConfirmation 0.3s ease-in-out';
         if (window.location.href.includes('add_task.html')) { navigateTo('board.html') }
     }, 1250);
-}
-
-
-/**
- * The function `generateUniqueId` generates a unique random ID within a range and ensures it is not
- * already in use.
- * @returns The function `generateUniqueId` returns a randomly generated unique ID as a string.
- */
-function generateUniqueId() {
-    let id;
-    do {
-        id = Math.floor(Math.random() * 1000000).toString();
-    } while (usedIds.has(id));
-    usedIds.add(id);
-    return id;
 }
 
 
